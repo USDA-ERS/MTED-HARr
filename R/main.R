@@ -5,31 +5,54 @@
 #' @return A list of headers
 #' @export
 read_har <- function(filename) {
+
+  # Open the file
   con = file(filename, 'rb')
 
+
+  # Read all bytes into a vector
   cf = c()
 
+  # Read until you hit the end of the file
   while (length(charRead <- readBin(con, raw())) > 0) {
     cf = c(cf, charRead)
   }
 
+  # Close the file
   close(con)
 
+  # Prepare a list for the headers
+  message('Scanning records for headers')
+  pb=txtProgressBar(min=0, max=length(cf),style=3)
   headers = list()
-  for (i in 1:(length(cf) - 12)) {
-    if (all(cf[i:(i + 3)] == as.raw(c(0x04, 0x00, 0x00, 0x00))) &
-        all(cf[(i + 8):(i + 11)] == as.raw(c(0x04, 0x00, 0x00, 0x00)))
-        & all(cf[(i + 4):(i + 7)] != c(0xff, 0xff, 0xff, 0xff))) {
-      headers[[trimws(rawToChar(readBin(cf[(i + 4):(i + 7)], raw(), n = 4)))]] = list(start = i)
+  i=1
+  while(i<length(cf)){
+    # Read the length of the record
+    toRead = readBin(cf[i:(i+3)],'integer',size=4)
+    if(toRead==4){
+      if(all(cf[(i+4):(i+3+toRead)]!=0x20)){
+        headers[[trimws(rawToChar(cf[(i+4):(i+3+toRead)]))]]=list(start=i)
+      }
     }
+    #records[[length(records)+1]]=list(start=i, record= cf[(i+4):(i+3+toRead)])
+    i=i+3+toRead+1
+    hasRead = readBin(cf[i:(i+3)],'integer',size=4)
+    if(hasRead!=toRead){
+      warning(paste('A broken record',i, hasRead, toRead))
+    }
+    i=i+4
+    setTxtProgressBar(pb,i-1)
   }
+  close(pb)
 
+  message(paste('Found',length(headers),'headers'))
 
   for (h in 1:length(headers)) {
     headers[[h]]$binary = cf[headers[[h]]$start:ifelse(h < length(headers), headers[[h +
                                                                                        1]]$start - 1, length(cf))]
   }
 
+  message('Sorting out records withing headers')
   #Separate records
   for (h in names(headers)) {
     headers[[h]]$records = list()
@@ -52,7 +75,7 @@ read_har <- function(filename) {
   }
 
   # Process first and second records
-
+  message('Processing first and second records within headers')
   for (h in names(headers)) {
     headers[[h]]$type = rawToChar(headers[[h]]$records[[2]][5:10])
     headers[[h]]$description = rawToChar(headers[[h]]$records[[2]][11:80])
@@ -70,6 +93,7 @@ read_har <- function(filename) {
 
   }
 
+  message('Processing character headers')
   # Process character headers 1CFULL
   for (h in names(headers)) {
     if (headers[[h]]$type == '1CFULL')  {
@@ -86,6 +110,8 @@ read_har <- function(filename) {
     }
 
   }
+
+  message('Processing integer headers')
 
   # Process character headers 2IFULL
   for (h in names(headers)) {
@@ -109,6 +135,7 @@ read_har <- function(filename) {
 
   }
 
+  message('Processing real headers')
 
   # Process real  headers REFULL
   for (h in names(headers)) {
