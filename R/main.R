@@ -2,6 +2,7 @@
 #' @name read_har
 #' @description Reads in a GEMPACK HAR file and returns its  representation a list. Currently can only process integer headers, real full headers and character headers
 #' @param filename Path to HAR file
+#' @param useCoefficientsAsNames If a coefficient name is present in the header, use that instead of the four-letter header
 #' @return A list of headers
 #' @export
 read_har <- function(filename, useCoefficientsAsNames = F) {
@@ -143,6 +144,33 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
     }
 
   }
+
+  # Process real headers 2RFULL
+  for (h in names(headers)) {
+    if (headers[[h]]$type == '2RFULL')  {
+      m = array(readBin(
+        Reduce(
+          function(a, f)
+            c(a, headers[[h]]$records[[f]][33:length(headers[[h]]$records[[f]])]),
+          3:length(headers[[h]]$records),
+          c()
+        ),
+        'double',
+        size = 4,
+        n = prod(headers[[h]]$dimensions)
+      ),
+      dim = headers[[h]]$dimensions)
+
+
+      headers[[h]]$data = m
+    }
+
+  }
+
+
+
+
+
 
   message('Processing real headers')
 

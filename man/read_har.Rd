@@ -8,6 +8,8 @@ read_har(filename, useCoefficientsAsNames = F)
 }
 \arguments{
 \item{filename}{Path to HAR file}
+
+\item{useCoefficientsAsNames}{If a coefficient name is present in the header, use that instead of the four-letter header}
 }
 \value{
 A list of headers
