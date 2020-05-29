@@ -4,7 +4,7 @@
 \alias{read_har}
 \title{Read a GEMPACK HAR file into R}
 \usage{
-read_har(filename)
+read_har(filename, useCoefficientsAsNames = F)
 }
 \arguments{
 \item{filename}{Path to HAR file}

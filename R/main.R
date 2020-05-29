@@ -4,55 +4,58 @@
 #' @param filename Path to HAR file
 #' @return A list of headers
 #' @export
-read_har <- function(filename) {
-
+read_har <- function(filename, useCoefficientsAsNames = F) {
   # Open the file
   con = file(filename, 'rb')
 
 
   # Read all bytes into a vector
-  cf = c()
+  cf = readBin(con, raw(), n = file.info(filename)$size)
 
   # Read until you hit the end of the file
   while (length(charRead <- readBin(con, raw())) > 0) {
     cf = c(cf, charRead)
   }
 
+
   # Close the file
   close(con)
 
   # Prepare a list for the headers
   message('Scanning records for headers')
-  pb=txtProgressBar(min=0, max=length(cf),style=3)
+  pb = txtProgressBar(min = 0,
+                      max = length(cf),
+                      style = 3)
   headers = list()
-  i=1
-  while(i<length(cf)){
+  i = 1
+  while (i < length(cf)) {
     # Read the length of the record
-    toRead = readBin(cf[i:(i+3)],'integer',size=4)
-    if(toRead==4){
-      if(all(cf[(i+4):(i+3+toRead)]!=0x20)){
-        headers[[trimws(rawToChar(cf[(i+4):(i+3+toRead)]))]]=list(start=i)
+    toRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
+    if (toRead == 4) {
+      if (!all(cf[(i + 4):(i + 3 + toRead)] == 0x20)) {
+        headers[[trimws(rawToChar(cf[(i + 4):(i + 3 + toRead)]))]] = list(start =
+                                                                            i)
       }
     }
     #records[[length(records)+1]]=list(start=i, record= cf[(i+4):(i+3+toRead)])
-    i=i+3+toRead+1
-    hasRead = readBin(cf[i:(i+3)],'integer',size=4)
-    if(hasRead!=toRead){
-      warning(paste('A broken record',i, hasRead, toRead))
+    i = i + 3 + toRead + 1
+    hasRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
+    if (hasRead != toRead) {
+      warning(paste('A broken record', i, hasRead, toRead))
     }
-    i=i+4
-    setTxtProgressBar(pb,i-1)
+    i = i + 4
+    setTxtProgressBar(pb, i - 1)
   }
   close(pb)
 
-  message(paste('Found',length(headers),'headers'))
+  message(paste('Found', length(headers), 'headers'))
 
   for (h in 1:length(headers)) {
     headers[[h]]$binary = cf[headers[[h]]$start:ifelse(h < length(headers), headers[[h +
                                                                                        1]]$start - 1, length(cf))]
   }
 
-  message('Sorting out records withing headers')
+  message('Sorting out records within headers')
   #Separate records
   for (h in names(headers)) {
     headers[[h]]$records = list()
@@ -98,7 +101,13 @@ read_har <- function(filename) {
   for (h in names(headers)) {
     if (headers[[h]]$type == '1CFULL')  {
       m = matrix(
-        strsplit(rawToChar(headers[[h]]$records[[3]][17:length(headers[[h]]$records[[3]])]), '')[[1]],
+        #strsplit(rawToChar(headers[[h]]$records[[3]][17:length(headers[[h]]$records[[3]])]), '')[[1]],
+        strsplit(rawToChar(Reduce(
+          function(a, f)
+            c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
+          3:length(headers[[h]]$records),
+          c()
+        )), '')[[1]],
         nrow =
           headers[[h]]$dimensions[[2]],
         ncol =
@@ -185,7 +194,9 @@ read_har <- function(filename) {
 
         m = array(
           readBin(
-            headers[[h]]$records[[length(headers[[h]]$records)]][9:length(headers[[h]]$records[[3]])],
+#            headers[[h]]$records[[length(headers[[h]]$records)]][9:length(headers[[h]]$records[[3]])],
+            headers[[h]]$records[[length(headers[[h]]$records)]][9:(8+Reduce(function(a, f)
+              a * length(f), dimNames, 1)*4)],
             'double',
             size = 4,
             n = Reduce(function(a, f)
@@ -213,5 +224,16 @@ read_har <- function(filename) {
 
   }
 
-  return(Map(function(f)f$data,headers))
+  toRet = Map(function(f)
+    f$data, headers)
+
+  if (useCoefficientsAsNames == T) {
+    for (h in 1:length(headers)) {
+      if (!is.null(headers[[h]]$coefficient)) {
+        names(toRet)[h] = trimws(headers[[h]]$coefficient)
+      }
+    }
+  }
+
+  return(toRet)
 }
