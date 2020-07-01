@@ -5,4 +5,5 @@ A package to read GEMPACK-style header-array files into R
 ```R
 install.packages('devtools')
 devtools::install_git('https://github.com/USDA-ERS/MTED-HARr.git')
-require(HARr)```
+require(HARr)
+```
