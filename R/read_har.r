@@ -9,7 +9,6 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
   # Open the file
   con = file(filename, 'rb')
 
-
   # Read all bytes into a vector
   cf = readBin(con, raw(), n = file.info(filename)$size)
 
@@ -134,9 +133,9 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
           n = prod(headers[[h]]$dimensions)
         ),
         nrow =
-          headers[[h]]$dimensions[[2]],
+          headers[[h]]$dimensions[[1]],
         ncol =
-          headers[[h]]$dimensions[[1]]
+          headers[[h]]$dimensions[[2]]
       )
 
 
@@ -176,7 +175,7 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
 
   # Process real  headers REFULL
   for (h in names(headers)) {
-    if (headers[[h]]$type == 'REFULL')  {
+    if (headers[[h]]$type %in% c('REFULL', 'RESPSE'))  {
       # Get used dimensions and their names from record 3
       headers[[h]]$definedDimensions = readBin(headers[[h]]$records[[3]][5:8], 'integer', size =
                                                  4)
@@ -214,27 +213,65 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
 
           for (dd in which(dnames == uniqueDimNames[d])) {
             dimNames[[dd]] = trimws(apply(m, 2, paste, collapse = ''))
+            # Add dimension name
+            names(dimNames)[dd] = trimws(uniqueDimNames[d])
           }
 
         }
 
+        dataStart = 3 + length(uniqueDimNames) + 1
+
+        if (headers[[h]]$type == 'REFULL') {
+          numberOfFrames = readBin(headers[[h]]$records[[dataStart]][5:8], 'integer')
+
+          numberOfDataFrames = (numberOfFrames - 1) / 2
 
 
-        m = array(
-          readBin(
-#            headers[[h]]$records[[length(headers[[h]]$records)]][9:length(headers[[h]]$records[[3]])],
-            headers[[h]]$records[[length(headers[[h]]$records)]][9:(8+Reduce(function(a, f)
-              a * length(f), dimNames, 1)*4)],
-            'double',
-            size = 4,
-            n = Reduce(function(a, f)
-              a * length(f), dimNames, 1)
-          ),
-          dim = Map(function(f)
-            length(f), dimNames),
-          dimnames = dimNames
-        )
+          dataFrames  = (dataStart) + 1:numberOfDataFrames * 2
 
+          dataBytes = Reduce(function(a, f)
+            c(a, headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])]), dataFrames, c())
+
+          m = array(
+            readBin(
+              # headers[[h]]$records[[length(headers[[h]]$records)]][9:(8+Reduce(function(a, f)
+              #   a * length(f), dimNames, 1)*4)],
+              dataBytes,
+              'double',
+              size = 4,
+              n = Reduce(function(a, f)
+                a * length(f), dimNames, 1)
+            ),
+            dim = Map(function(f)
+              length(f), dimNames),
+            dimnames = dimNames
+          )
+        }else{
+          elements = readBin(headers[[h]]$records[[dataStart]][5:8],'integer',size=4)
+          dataVector = rep(0,prod(unlist(Map(function(f)length(f), dimNames))))
+
+          for(rr in (dataStart+1):length(headers[[h]]$records)){
+
+            dataBytes = headers[[h]]$records[[rr]][17:length(headers[[h]]$records[[rr]])]
+
+            currentPoints = length(dataBytes)/8
+
+            locations = readBin(dataBytes[1:(4*currentPoints)],'integer',size=4, n = currentPoints)
+            values = readBin(dataBytes[(4*currentPoints+1):(8*currentPoints)],'double',size=4, n = currentPoints)
+
+            dataVector[locations]=values
+          }
+
+
+          m = array(
+            dataVector,
+            dim = Map(function(f)
+              length(f), dimNames),
+            dimnames = dimNames
+          )
+
+
+        }
       } else {
         m = array(readBin(
           headers[[h]]$records[[length(headers[[h]]$records)]][9:length(headers[[h]]$records[[3]])],
