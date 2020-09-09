@@ -127,7 +127,13 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
     if (headers[[h]]$type == '2IFULL')  {
       m = matrix(
         readBin(
-          headers[[h]]$records[[3]][33:length(headers[[h]]$records[[3]])],
+          Reduce(
+            function(a, f)
+              c(a, headers[[h]]$records[[f]][33:length(headers[[h]]$records[[f]])]),
+            3:length(headers[[h]]$records),
+            c()
+          ),
+          #headers[[h]]$records[[3]][33:length(headers[[h]]$records[[3]])],
           'integer',
           size = 4,
           n = prod(headers[[h]]$dimensions)
