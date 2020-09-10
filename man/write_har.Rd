@@ -8,12 +8,10 @@ write_har(data, filename)
 }
 \arguments{
 \item{filename}{Path to HAR file}
-
-\item{useCoefficientsAsNames}{If a coefficient name is present in the header, use that instead of the four-letter header}
 }
 \value{
 A list of headers
 }
 \description{
-Write an R list to GEMPACK HAR
+This function writes a HAR file based on a list
 }

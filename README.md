@@ -1,7 +1,7 @@
 # MTED-HARr
 A package to read and write GEMPACK-style header-array files into R. 
 
-This package does not use any GEMPACK routines; instead, it works with the binary HAR files directly using native R functions 
+This package does not use any GEMPACK routines; instead, it works with the binary HAR files directly using basic R functions 
 
 # To install you can try the following: 
 ```R
@@ -32,4 +32,8 @@ data = list(
   
 )
 write_har(data, 'test.har')
+```
+# To read an SL4 solution file you can try the following: 
+```R
+data = read_SL4('solutoin.sl4')
 ```

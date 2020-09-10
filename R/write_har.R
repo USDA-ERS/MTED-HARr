@@ -1,8 +1,7 @@
 #' @title Write an R list to GEMPACK HAR
 #' @name write_har
-#' @description
+#' @description This function writes a HAR file based on a list
 #' @param filename Path to HAR file
-#' @param useCoefficientsAsNames If a coefficient name is present in the header, use that instead of the four-letter header
 #' @return A list of headers
 #' @export
 write_har <- function(data, filename) {
