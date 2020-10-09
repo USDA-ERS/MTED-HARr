@@ -11,10 +11,10 @@ write_har <- function(data, filename) {
     headerName = names(data)[f]
 
     if (nchar(headerName) <= 4) {
-      if (class(data[[f]]) == 'character') {
+      if (any(class(data[[f]]) == 'character')) {
         write_1CFULL(headerName, data[[f]])
-      } else if (class(data[[f]]) %in% c('matrix','array','numeric')){
-        if(class(data[[f]])=='matrix' & is.integer(data[[f]])){
+      } else if (any(class(data[[f]]) %in% c('matrix','array','numeric'))){
+        if(any(class(data[[f]])=='matrix') & is.integer(data[[f]])){
           write_2IFULL(headerName, data[[f]])
         } else {
           write_REFULL(headerName, data[[f]])

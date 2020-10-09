@@ -206,26 +206,47 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
 
         uniqueDimNames = unique(dnames)
 
-        for (d in 1:length(uniqueDimNames)) {
-          nele = readBin(headers[[h]]$records[[3 + d]][13:16], 'integer', size = 4)
 
-          m = matrix(strsplit(rawToChar(headers[[h]]$records[[3 + d]][17:(17 +
-                                                                            nele * 12 - 1)]), '')[[1]],
-                     nrow =
-                       12,
-                     ncol =
-                       nele)
+        if (headers[[h]]$definedDimensions == 0) {
+          uniqueDimNames = as.character()
+        }
+
+        if (length(uniqueDimNames) > 0) {
+          for (d in 1:length(uniqueDimNames)) {
+            nele = readBin(headers[[h]]$records[[3 + d]][13:16], 'integer', size = 4)
+
+            m = matrix(strsplit(rawToChar(headers[[h]]$records[[3 + d]][17:(17 +
+                                                                              nele * 12 - 1)]), '')[[1]],
+                       nrow =
+                         12,
+                       ncol =
+                         nele)
 
 
-          for (dd in which(dnames == uniqueDimNames[d])) {
-            dimNames[[dd]] = trimws(apply(m, 2, paste, collapse = ''))
-            # Add dimension name
-            names(dimNames)[dd] = trimws(uniqueDimNames[d])
+            for (dd in which(dnames == uniqueDimNames[d])) {
+              dimNames[[dd]] = trimws(apply(m, 2, paste, collapse = ''))
+              # Add dimension name
+              names(dimNames)[dd] = trimws(uniqueDimNames[d])
+            }
+
           }
-
         }
 
         dataStart = 3 + length(uniqueDimNames) + 1
+
+        # There are no defined dimensions, generate the names etc.
+        if(headers[[h]]$definedDimensions==0){
+
+          dimNames=Reduce(function(a,f){
+            a[[length(a)+1]]=(paste('Element', 1:headers[[h]]$dimensions[f] ))
+            return(a)
+          } , #headers[[h]]$dimensions[1:headers[[h]]$usedDimensions]
+          (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions>0]
+          ,list())
+
+          names(dimNames) = paste('Dimension', (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions>0])
+
+        }
 
         if (headers[[h]]$type == 'REFULL') {
           numberOfFrames = readBin(headers[[h]]$records[[dataStart]][5:8], 'integer')
@@ -252,20 +273,29 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
               length(f), dimNames),
             dimnames = dimNames
           )
-        }else{
-          elements = readBin(headers[[h]]$records[[dataStart]][5:8],'integer',size=4)
-          dataVector = rep(0,prod(unlist(Map(function(f)length(f), dimNames))))
+        } else{
+          elements = readBin(headers[[h]]$records[[dataStart]][5:8], 'integer', size =
+                               4)
+          dataVector = rep(0, prod(unlist(
+            Map(function(f)
+              length(f), dimNames)
+          )))
 
-          for(rr in (dataStart+1):length(headers[[h]]$records)){
-
+          for (rr in (dataStart + 1):length(headers[[h]]$records)) {
             dataBytes = headers[[h]]$records[[rr]][17:length(headers[[h]]$records[[rr]])]
 
-            currentPoints = length(dataBytes)/8
+            currentPoints = length(dataBytes) / 8
 
-            locations = readBin(dataBytes[1:(4*currentPoints)],'integer',size=4, n = currentPoints)
-            values = readBin(dataBytes[(4*currentPoints+1):(8*currentPoints)],'double',size=4, n = currentPoints)
+            locations = readBin(dataBytes[1:(4 * currentPoints)],
+                                'integer',
+                                size = 4,
+                                n = currentPoints)
+            values = readBin(dataBytes[(4 * currentPoints + 1):(8 * currentPoints)],
+                             'double',
+                             size = 4,
+                             n = currentPoints)
 
-            dataVector[locations]=values
+            dataVector[locations] = values
           }
 
 
