@@ -9,21 +9,22 @@ write_har <- function(data, filename, data_info) {
   con = file(filename, 'wb')
   records = Map(function(f) {
     headerName = names(data)[f]
-
     if (nchar(headerName) <= 4) {
       if (class(data[[f]]) == 'character') {
         write_1CFULL(headerName, data[[f]],
-                     description = data_info[[f]][[1]])
+                     description = data_info[[headerName]][[1]])
       } else if (class(data[[f]]) %in% c('matrix','array','numeric')){
         if(class(data[[f]])=='matrix' & is.integer(data[[f]])){
           write_2IFULL(headerName, data[[f]],
-                       description = data_info[[f]][[1]])
+                       description = data_info[[headerName]][[1]])
         } else {
           write_REFULL(headerName, data[[f]],
-                       coefficient = data_info[[f]][[1]],
-                       description = data_info[[f]][[2]])
+                       coefficient = unname(data_info[[headerName]][1]),
+                       description = unname(data_info[[headerName]][2]))
         }
       }
+    } else {
+      stop("Header name must have a maximum length of 4 characters")
     }
   }
   ,
