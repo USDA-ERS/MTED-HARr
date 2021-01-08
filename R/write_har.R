@@ -4,7 +4,7 @@
 #' @param filename Path to HAR file
 #' @return A list of headers
 #' @export
-write_har <- function(data, filename) {
+write_har <- function(data, filename, data_info) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
@@ -12,12 +12,16 @@ write_har <- function(data, filename) {
 
     if (nchar(headerName) <= 4) {
       if (class(data[[f]]) == 'character') {
-        write_1CFULL(headerName, data[[f]])
+        write_1CFULL(headerName, data[[f]],
+                     description = data_info[[f]][[1]])
       } else if (class(data[[f]]) %in% c('matrix','array','numeric')){
         if(class(data[[f]])=='matrix' & is.integer(data[[f]])){
-          write_2IFULL(headerName, data[[f]])
+          write_2IFULL(headerName, data[[f]],
+                       description = data_info[[f]][[1]])
         } else {
-          write_REFULL(headerName, data[[f]])
+          write_REFULL(headerName, data[[f]],
+                       coefficient = data_info[[f]][[1]],
+                       description = data_info[[f]][[2]])
         }
       }
     }
