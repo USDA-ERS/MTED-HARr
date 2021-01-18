@@ -2,6 +2,7 @@
 #' @name write_har
 #' @description This function writes a HAR file based on a list
 #' @param filename Path to HAR file
+#' @param data_info Extra data with the header name and description
 #' @return A list of headers
 #' @export
 write_har <- function(data, filename, data_info) {
