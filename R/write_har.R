@@ -5,7 +5,7 @@
 #' @param data_info Extra data with the header name and description
 #' @return A list of headers
 #' @export
-write_har <- function(data, filename, data_info) {
+write_har <- function(data, filename, data_info = NULL) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
