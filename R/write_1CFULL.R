@@ -15,7 +15,8 @@ write_1CFULL = function(headerName, arr, description = NULL) {
 
   r = list()
 
-  r[[1]] = writeBin(paste0(headerName,rep(' ',4-nchar(headerName))), raw())[1:4]
+  r[[1]] = writeBin(paste0(c(headerName,rep(' ',4-nchar(headerName))),
+                           collapse = ""), raw())[1:4]
 
 
   r[[2]] =
