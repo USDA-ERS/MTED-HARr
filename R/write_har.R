@@ -2,24 +2,30 @@
 #' @name write_har
 #' @description This function writes a HAR file based on a list
 #' @param filename Path to HAR file
+#' @param data_info Extra data with the header name and description
 #' @return A list of headers
 #' @export
-write_har <- function(data, filename) {
+write_har <- function(data, filename, data_info = NULL) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
     headerName = names(data)[f]
-
     if (nchar(headerName) <= 4) {
       if (class(data[[f]]) == 'character') {
-        write_1CFULL(headerName, data[[f]])
+        write_1CFULL(headerName, data[[f]],
+                     description = data_info[[headerName]][[1]])
       } else if (class(data[[f]]) %in% c('matrix','array','numeric')){
         if(class(data[[f]])=='matrix' & is.integer(data[[f]])){
-          write_2IFULL(headerName, data[[f]])
+          write_2IFULL(headerName, data[[f]],
+                       description = data_info[[headerName]][[1]])
         } else {
-          write_REFULL(headerName, data[[f]])
+          write_REFULL(headerName, data[[f]],
+                       coefficient = unname(data_info[[headerName]][1]),
+                       description = unname(data_info[[headerName]][2]))
         }
       }
+    } else {
+      stop("Header name must have a maximum length of 4 characters")
     }
   }
   ,
