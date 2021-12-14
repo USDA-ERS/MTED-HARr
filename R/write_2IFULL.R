@@ -2,6 +2,10 @@ write_2IFULL = function(headerName, arr, description = NULL) {
   # If no description is provided, use the header name
   if (is.null(description)) {
     description = headerName
+  } else{
+    if (nchar(description) > 70) {
+      stop(paste0("The length of the ", headerName, " description is larger than 12"))
+    }
   }
 
   # Number of dimensions of the object
@@ -11,7 +15,8 @@ write_2IFULL = function(headerName, arr, description = NULL) {
 
   r = list()
 
-  r[[1]] = writeBin(paste0(headerName,rep(' ',4-nchar(headerName))), raw())[1:4]
+  r[[1]] = writeBin(paste0(c(headerName,rep(' ',4-nchar(headerName))),
+                           collapse = ""), raw())[1:4]
 
 
   r[[2]] =

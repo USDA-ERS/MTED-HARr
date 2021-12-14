@@ -1,11 +1,19 @@
 write_REFULL = function(headerName, arr, description = NULL, coefficient = NULL) {
-  # If no description is provided, use the header name
-  if (is.null(description)) {
+  # If no description is provided, use header name
+  if (is.null(description) | any(is.na(description))) {
     description = headerName
+  } else{
+    if (nchar(description) > 70) {
+      stop(paste0("The length of the ", headerName, " description is larger than 12"))
+    }
   }
 
   if (is.null(coefficient)) {
     coefficient = headerName
+  } else{
+    if (nchar(coefficient) > 12) {
+      stop(paste0("The length of the ", headerName, " coefficient is larger than 12"))
+    }
   }
 
   # Number of dimensions of the object
@@ -22,7 +30,8 @@ write_REFULL = function(headerName, arr, description = NULL, coefficient = NULL)
 
   r = list()
 
-  r[[1]] = writeBin(paste0(headerName,rep(' ',4-nchar(headerName))), raw())[1:4]
+  r[[1]] = writeBin(paste0(c(headerName,rep(' ',4-nchar(headerName))),
+                           collapse = ""), raw())[1:4]
 
 
   r[[2]] =
