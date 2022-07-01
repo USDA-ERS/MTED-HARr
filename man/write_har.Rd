@@ -4,7 +4,7 @@
 \alias{write_har}
 \title{Write an R list to GEMPACK HAR}
 \usage{
-write_har(data, filename)
+write_har(data, filename, maxSize = 1e+07)
 }
 \arguments{
 \item{filename}{Path to HAR file}
