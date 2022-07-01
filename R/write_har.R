@@ -4,7 +4,7 @@
 #' @param filename Path to HAR file
 #' @return A list of headers
 #' @export
-write_har <- function(data, filename) {
+write_har <- function(data, filename, maxSize = 10e6) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
@@ -17,7 +17,7 @@ write_har <- function(data, filename) {
         if(any(class(data[[f]])=='matrix') & is.integer(data[[f]])){
           write_2IFULL(headerName, data[[f]])
         } else {
-          write_REFULL(headerName, data[[f]])
+          write_REFULL(headerName, data[[f]],maxSize=maxSize)
         }
       }
     }

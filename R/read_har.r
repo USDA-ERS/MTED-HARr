@@ -256,8 +256,10 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
 
           dataFrames  = (dataStart) + 1:numberOfDataFrames * 2
 
-          dataBytes = Reduce(function(a, f)
-            c(a, headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])]), dataFrames, c())
+          # dataBytes = Reduce(function(a, f)
+          #   c(a, headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])]), dataFrames, c())
+          dataBytes = do.call(c,Map(function(f)
+            headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])], dataFrames))
 
           m = array(
             readBin(
