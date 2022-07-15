@@ -100,14 +100,25 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
   # Process character headers 1CFULL
   for (h in names(headers)) {
     if (headers[[h]]$type == '1CFULL')  {
+
+      contents = Reduce(
+        function(a, f)
+          c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
+        3:length(headers[[h]]$records),
+        c()
+      )
+
+      contents[contents == 0x00] = as.raw(0x20)
+
       m = matrix(
         #strsplit(rawToChar(headers[[h]]$records[[3]][17:length(headers[[h]]$records[[3]])]), '')[[1]],
-        strsplit(rawToChar(Reduce(
-          function(a, f)
-            c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
-          3:length(headers[[h]]$records),
-          c()
-        )), '')[[1]],
+        # strsplit(rawToChar(as.raw(unlist(Map(function(g)ifelse(g==0x00,0x20,g),Reduce(
+        #   function(a, f)
+        #     c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
+        #   3:length(headers[[h]]$records),
+        #   c()
+        # ))))), '')[[1]],
+        strsplit(rawToChar(contents), '')[[1]],
         nrow =
           headers[[h]]$dimensions[[2]],
         ncol =
