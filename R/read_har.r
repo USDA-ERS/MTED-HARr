@@ -21,62 +21,134 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
   # Close the file
   close(con)
 
-  # Prepare a list for the headers
-  message('Scanning records for headers')
-  pb = txtProgressBar(min = 0,
-                      max = length(cf),
-                      style = 3)
-  headers = list()
-  i = 1
-  while (i < length(cf)) {
-    # Read the length of the record
-    toRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
-    if (toRead == 4) {
-      if (!all(cf[(i + 4):(i + 3 + toRead)] == 0x20)) {
-        headers[[trimws(rawToChar(cf[(i + 4):(i + 3 + toRead)]))]] = list(start =
-                                                                            i)
+  if (cf[1] == 0xfd) {
+    currentHeader = ""
+    headers = list()
+    i = 2
+    while (i < length(cf)) {
+      # read the first byte
+      fb = cf[i]
+      i = i + 1
+
+
+      bitsLength = as.integer(rawToBits(fb))[3:8]
+
+      toRead = as.integer(rawToBits(fb))[1:2]
+
+      toReadBytes = Reduce(function(a, f)
+        a = a + 2 ^ (f - 1) * toRead[f], 1:length(toRead), 0)
+
+
+      if (toReadBytes > 0) {
+        for (i in (i):(i + toReadBytes-1)) {
+          bitsLength = c(bitsLength, rawToBits(cf[i]))
+        }
+        #i= i + toReadBytes
+        i=i+1
       }
+
+
+      recordLength = Reduce(function(a, f)
+        a = a + 2 ^ (f - 1) * bitsLength[f],
+        1:length(bitsLength),
+        0)
+
+      if (recordLength == 4) {
+        currentHeader = trimws(rawToChar(cf[(i):(i + recordLength-1)]))
+      }
+        if (is.null(headers[[currentHeader]]))
+          headers[[currentHeader]] = list()
+
+        if (is.null(headers[[currentHeader]]$records))
+          headers[[currentHeader]]$records = list()
+
+        headers[[currentHeader]]$records[[length(headers[[currentHeader]]$records)+1]] = cf[(i):(i + recordLength-1)]
+
+
+      i= i + recordLength
+
+      totalLength = recordLength + 1 + toReadBytes
+
+      endingBits = intToBits(totalLength)
+
+      maxPosition = max(which(endingBits==1))
+
+      if(maxPosition<=6){
+        needEnd = 0
+      } else {
+        needEnd = 0+ ceiling((maxPosition -6)/8)
+      }
+
+      expectedEnd = packBits(c(intToBits(needEnd)[1:2], intToBits(totalLength))[1:(8*(needEnd+1))],'raw')
+
+      expectedEnd = expectedEnd[length(expectedEnd):1]
+
+      if(any(cf[i:(i+length(expectedEnd)-1)]!=expectedEnd)){
+        stop("Surprising end of record")
+      }
+
+      i= i+length(expectedEnd)
+
+
     }
-    #records[[length(records)+1]]=list(start=i, record= cf[(i+4):(i+3+toRead)])
-    i = i + 3 + toRead + 1
-    hasRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
-    if (hasRead != toRead) {
-      warning(paste('A broken record', i, hasRead, toRead))
-    }
-    i = i + 4
-    setTxtProgressBar(pb, i - 1)
-  }
-  close(pb)
-
-  message(paste('Found', length(headers), 'headers'))
-
-  for (h in 1:length(headers)) {
-    headers[[h]]$binary = cf[headers[[h]]$start:ifelse(h < length(headers), headers[[h +
-                                                                                       1]]$start - 1, length(cf))]
-  }
-
-  message('Sorting out records within headers')
-  #Separate records
-  for (h in names(headers)) {
-    headers[[h]]$records = list()
-
+  } else {
+    # Prepare a list for the headers
+    message('Scanning records for headers')
+    pb = txtProgressBar(min = 0,
+                        max = length(cf),
+                        style = 3)
+    headers = list()
     i = 1
+    while (i < length(cf)) {
+      # Read the length of the record
+      toRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
+      if (toRead == 4) {
+        if (!all(cf[(i + 4):(i + 3 + toRead)] == 0x20)) {
+          headers[[trimws(rawToChar(cf[(i + 4):(i + 3 + toRead)]))]] = list(start =
+                                                                              i)
+        }
+      }
+      #records[[length(records)+1]]=list(start=i, record= cf[(i+4):(i+3+toRead)])
+      i = i + 3 + toRead + 1
+      hasRead = readBin(cf[i:(i + 3)], 'integer', size = 4)
+      if (hasRead != toRead) {
+        warning(paste('A broken record', i, hasRead, toRead))
+      }
+      i = i + 4
+      setTxtProgressBar(pb, i - 1)
+    }
+    close(pb)
 
-    while (i < length(headers[[h]]$binary)) {
-      toRead = readBin(headers[[h]]$binary[i:(i + 3)], 'integer', size = 4)
-      i = i + 4
-      headers[[h]]$records[[length(headers[[h]]$records) + 1]] = readBin(headers[[h]]$binary[i:(i +
-                                                                                                  toRead - 1)], raw(), n = toRead)
-      i = i + toRead
-      hasRead = readBin(headers[[h]]$binary[i:(i + 3)], 'integer', size =
-                          4)
-      i = i + 4
-      if (toRead != hasRead) {
-        warning(paste('toRead different from hasRead in ', h))
+
+    message(paste('Found', length(headers), 'headers'))
+
+    for (h in 1:length(headers)) {
+      headers[[h]]$binary = cf[headers[[h]]$start:ifelse(h < length(headers), headers[[h +
+                                                                                         1]]$start - 1, length(cf))]
+    }
+
+    message('Sorting out records within headers')
+    #Separate records
+    for (h in names(headers)) {
+      headers[[h]]$records = list()
+
+      i = 1
+
+      while (i < length(headers[[h]]$binary)) {
+        toRead = readBin(headers[[h]]$binary[i:(i + 3)], 'integer', size = 4)
+        i = i + 4
+        headers[[h]]$records[[length(headers[[h]]$records) + 1]] = readBin(headers[[h]]$binary[i:(i +
+                                                                                                    toRead - 1)], raw(), n = toRead)
+        i = i + toRead
+        hasRead = readBin(headers[[h]]$binary[i:(i + 3)], 'integer', size =
+                            4)
+        i = i + 4
+        if (toRead != hasRead) {
+          warning(paste('toRead different from hasRead in ', h))
+        }
       }
     }
   }
-
   # Process first and second records
   message('Processing first and second records within headers')
   for (h in names(headers)) {
@@ -100,13 +172,10 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
   # Process character headers 1CFULL
   for (h in names(headers)) {
     if (headers[[h]]$type == '1CFULL')  {
-
-      contents = Reduce(
-        function(a, f)
-          c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
+      contents = Reduce(function(a, f)
+        c(a, headers[[h]]$records[[f]][17:length(headers[[h]]$records[[f]])]),
         3:length(headers[[h]]$records),
-        c()
-      )
+        c())
 
       contents[contents == 0x00] = as.raw(0x20)
 
@@ -246,16 +315,17 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
         dataStart = 3 + length(uniqueDimNames) + 1
 
         # There are no defined dimensions, generate the names etc.
-        if(headers[[h]]$definedDimensions==0){
-
-          dimNames=Reduce(function(a,f){
-            a[[length(a)+1]]=(paste('Element', 1:headers[[h]]$dimensions[f] ))
+        if (headers[[h]]$definedDimensions == 0) {
+          dimNames = Reduce(function(a, f) {
+            a[[length(a) + 1]] = (paste('Element', 1:headers[[h]]$dimensions[f]))
             return(a)
           } , #headers[[h]]$dimensions[1:headers[[h]]$usedDimensions]
-          (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions>0]
-          ,list())
+          (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
+                                            0]
+          , list())
 
-          names(dimNames) = paste('Dimension', (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions>0])
+          names(dimNames) = paste('Dimension', (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
+                                                                                 0])
 
         }
 
@@ -269,7 +339,7 @@ read_har <- function(filename, useCoefficientsAsNames = F) {
 
           # dataBytes = Reduce(function(a, f)
           #   c(a, headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])]), dataFrames, c())
-          dataBytes = do.call(c,Map(function(f)
+          dataBytes = do.call(c, Map(function(f)
             headers[[h]]$records[[f]][9:length(headers[[h]]$records[[f]])], dataFrames))
 
           m = array(
