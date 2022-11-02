@@ -70,8 +70,9 @@ write_REFULL = function(headerName,
     ))),
     as.raw(c(rep(
       0x00, 4 + 4 * length(dimnames(arr))
-    ))),
-    as.raw(c(rep(0x00, 7))))
+    )))
+    #, as.raw(c(rep(0x00, 7)))
+    )
 
   }
 
