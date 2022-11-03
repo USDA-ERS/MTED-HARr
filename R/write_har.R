@@ -4,7 +4,7 @@
 #' @param filename Path to HAR file
 #' @return A list of headers
 #' @export
-write_har <- function(data, filename, maxSize = 10e6) {
+write_har <- function(data, filename, maxSize = 10e4) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
