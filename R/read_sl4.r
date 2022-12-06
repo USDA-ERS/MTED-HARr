@@ -4,12 +4,18 @@
 #' @param filename Path to SL4 file
 #' @return A list of variables
 #' @export
-read_SL4 = function(filename) {
+read_SL4 = function(filename, toLowerCase = TRUE) {
   #filename = "C:\\Users\\MAROS.IVANIC\\OneDrive - USDA\\F2F\\Models\\Modified AEZ\\Solutions\\update.sl4"
   #filename = "C:\\Users\\MAROS.IVANIC\\OneDrive - USDA\\F2F\\Models\\Modified AEZ\\Solutions\\f2faverage.sl4"
 
   # Read the solution as a HAR file
-  solution = read_har(filename)
+  solution = read_har(filename, toLowerCase = toLowerCase)
+
+  #browser()
+
+  if(toLowerCase){
+    names(solution) = toupper(names(solution))
+  }
 
   # Logical vector to identify those variables that have some exogenous components
   partials = solution$OREX > 0 & solution$OREX != solution$VNCP
