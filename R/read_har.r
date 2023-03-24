@@ -370,7 +370,7 @@ read_har <-
                 size = 4,
                 n = prod(headers[[h]]$dimensions)
               ),
-              dim = headers[[h]]$dimensions,
+              dim = headers[[h]]$dimensions[1:headers[[h]]$usedDimensions],
               dimnames = dimNames
             )
           } else{
@@ -398,7 +398,7 @@ read_har <-
 
             m = array(
               dataVector,
-              dim = headers[[h]]$dimensions,
+              dim = headers[[h]]$dimensions[1:headers[[h]]$usedDimensions],
               dimnames = dimNames
             )
 
@@ -411,7 +411,7 @@ read_har <-
             size = 4,
             n = prod(headers[[h]]$dimensions)
           ),
-          dim = headers[[h]]$dimensions)
+          dim = headers[[h]]$dimensions[1:headers[[h]]$usedDimensions])
 
         }
 
