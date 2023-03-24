@@ -127,7 +127,7 @@ read_SL4 = function(filename, toLowerCase = TRUE) {
     start = 1
     for(v in which(solution[[SHCK]]>0 & solution[[SHCK]] < solution$VNCP)){
 
-      positions = solution$SHCL[start:(start+solution[[SHCK]][v]-1)]
+      positions = solution[[SHCL]][start:(start+solution[[SHCK]][v]-1)]
 
       toFill = rep(FALSE, length(results[[solution$VARS[v]]]))
 

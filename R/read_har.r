@@ -297,15 +297,18 @@ read_har <-
 
           dnames = apply(m, 2, paste, collapse = '')
 
-          dimNames = list()
+          dimNames = Map(function(f)NULL, 1:headers[[h]]$usedDimensions)
+
+          actualDimsNamesFlags = headers[[h]]$records[[3]][(33 + headers[[h]]$usedDimensions *
+                                                            12)+0:6]
+          actualDimsNames=ifelse(actualDimsNamesFlags==0x6b,TRUE,FALSE)
+
+          uniqueDimNames = unique(dnames[actualDimsNames])
 
 
-          uniqueDimNames = unique(dnames)
-
-
-          if (headers[[h]]$definedDimensions == 0) {
-            uniqueDimNames = as.character()
-          }
+          # if (headers[[h]]$definedDimensions == 0) {
+          #   uniqueDimNames = as.character()
+          # }
 
           if (length(uniqueDimNames) > 0) {
             for (d in 1:length(uniqueDimNames)) {
@@ -330,20 +333,20 @@ read_har <-
 
           dataStart = 3 + length(uniqueDimNames) + 1
 
-          # There are no defined dimensions, generate the names etc.
-          if (headers[[h]]$definedDimensions == 0) {
-            dimNames = Reduce(function(a, f) {
-              a[[length(a) + 1]] = (paste('Element', 1:headers[[h]]$dimensions[f]))
-              return(a)
-            } , #headers[[h]]$dimensions[1:headers[[h]]$usedDimensions]
-            (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
-                                              0]
-            , list())
-
-            names(dimNames) = paste('Dimension', (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
-                                                                                   0])
-
-          }
+          # # There are no defined dimensions, generate the names etc.
+          # if (headers[[h]]$definedDimensions == 0) {
+          #   dimNames = Reduce(function(a, f) {
+          #     a[[length(a) + 1]] = (paste('Element', 1:headers[[h]]$dimensions[f]))
+          #     return(a)
+          #   } , #headers[[h]]$dimensions[1:headers[[h]]$usedDimensions]
+          #   (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
+          #                                     0]
+          #   , list())
+          #
+          #   names(dimNames) = paste('Dimension', (1:headers[[h]]$usedDimensions)[1:headers[[h]]$usedDimensions >
+          #                                                                          0])
+          #
+          # }
 
           if (headers[[h]]$type == 'REFULL') {
             numberOfFrames = readBin(headers[[h]]$records[[dataStart]][5:8], 'integer')
@@ -365,20 +368,15 @@ read_har <-
                 dataBytes,
                 'double',
                 size = 4,
-                n = Reduce(function(a, f)
-                  a * length(f), dimNames, 1)
+                n = prod(headers[[h]]$dimensions)
               ),
-              dim = Map(function(f)
-                length(f), dimNames),
+              dim = headers[[h]]$dimensions,
               dimnames = dimNames
             )
           } else{
             elements = readBin(headers[[h]]$records[[dataStart]][5:8], 'integer', size =
                                  4)
-            dataVector = rep(0, prod(unlist(
-              Map(function(f)
-                length(f), dimNames)
-            )))
+            dataVector = rep(0, prod(headers[[h]]$dimensions))
 
             for (rr in (dataStart + 1):length(headers[[h]]$records)) {
               dataBytes = headers[[h]]$records[[rr]][17:length(headers[[h]]$records[[rr]])]
@@ -400,8 +398,7 @@ read_har <-
 
             m = array(
               dataVector,
-              dim = Map(function(f)
-                length(f), dimNames),
+              dim = headers[[h]]$dimensions,
               dimnames = dimNames
             )
 
