@@ -29,7 +29,7 @@ write_REFULL = function(headerName,
 
   r = list()
 
-  r[[1]] = writeBin(paste0(headerName, rep(' ', 4 - nchar(headerName))), raw())[1:4]
+  r[[1]] = writeBin(paste0(headerName, paste(rep(' ',4-nchar(headerName)),collapse='')), raw())[1:4]
 
 
   r[[2]] =

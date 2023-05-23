@@ -4,14 +4,18 @@
 \alias{write_har}
 \title{Write an R list to GEMPACK HAR}
 \usage{
-write_har(data, filename, maxSize = 1e+07)
+write_har(data, filename, maxSize = 1e+05)
 }
 \arguments{
-\item{filename}{Path to HAR file}
-}
-\value{
-A list of headers
+\item{data}{A list}
 }
 \description{
-This function writes a HAR file based on a list
+This function writes a HAR file based on a list. If a list element contains attribute "description," then it is used to define the long header name
+
+Some warnings: (1) you cannot have NA's in a HAR file, (2) empty strings are not allowed, (3) some programs (e.g., GEMPACK models) read chunks of data no longer than 1e4 bytes (set maxSize = 1e4), (4) all dimensions in arrays must have names (see example)
+}
+\examples{
+myList = list(TEST = c('Test'))
+attr(myList$TEST,'description') = "This is the long header name"
+write_har(myList,'harfile.har')
 }
