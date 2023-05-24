@@ -26,7 +26,7 @@ read_SL4 = function(filename, toLowerCase = TRUE) {
       if(solution$VCNI[f]>0){
         dimensions = solution$VCSN[solution$VCSP[f]:(solution$VCSP[f]+solution$VCNI[f]-1)]
         sizes = c(solution$SSZ[dimensions],length(subtotals))
-        labels = c(Map(function(g) solution$STEL[solution$ELAD[g]:(solution$ELAD[g]+solution$SSZ[g]-1)], dimensions),list(subtotals))
+        labels = c(Map(function(g)if(solution$SSZ[g]==0) c() else solution$STEL[solution$ELAD[g]:(solution$ELAD[g]+solution$SSZ[g]-1)], dimensions),list(subtotals))
         names(labels) = c(solution$STNM[ dimensions],'subtotal')
 
       } else {
@@ -35,7 +35,6 @@ read_SL4 = function(filename, toLowerCase = TRUE) {
         names(labels) = c('subtotal')
 
       }
-
       array(NA, dim = sizes, dimnames = labels)
 
 
