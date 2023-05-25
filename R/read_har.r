@@ -200,8 +200,14 @@ read_har <-
             headers[[h]]$dimensions[[1]]
         )
 
+        # do not remove empty space in the history header
+        if(tolower(h)=='xxhs'){
+          toRet = apply(m, 2, paste, collapse = '')
+        } else {
+          toRet = trimws(apply(m, 2, paste, collapse = ''))
+        }
 
-        toRet = trimws(apply(m, 2, paste, collapse = ''))
+
 
         if (toLowerCase) {
           toRet = tolower(toRet)
