@@ -4,7 +4,7 @@
 \alias{write_har}
 \title{Write an R list to GEMPACK HAR}
 \usage{
-write_har(data, filename, maxSize = 1e+05)
+write_har(data, filename, maxSize = 10000)
 }
 \arguments{
 \item{data}{A list}

@@ -8,7 +8,7 @@
 #' @examples attr(myList$TEST,'description') = "This is the long header name"
 #' @examples write_har(myList,'harfile.har')
 #' @export
-write_har <- function(data, filename, maxSize = 1e5) {
+write_har <- function(data, filename, maxSize = 1e4) {
   # Open the file
   con = file(filename, 'wb')
   records = Map(function(f) {
