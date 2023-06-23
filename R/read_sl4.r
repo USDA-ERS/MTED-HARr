@@ -134,7 +134,7 @@ read_SL4 = function(filename, toLowerCase = TRUE) {
 
       start = solution$SHCK[v]+start
 
-      results[[solution$VARS[v]]][toFill] = solution$SHOC[solution$PSHK[v]:(solution$PSHK[v]-1+solution$SHCK[v])]
+      results[[solution$VARS[v]]][toFill] = solution$SHOC[solution$PSHK[v]:(solution$PSHK[v]-1+solution[[SHCK]][v])]
     }
 
 
