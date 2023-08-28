@@ -193,7 +193,8 @@ read_har <-
         contents[contents == 0x00] = as.raw(0x20)
 
         m = matrix(
-          rawToChar(contents, multiple = TRUE),
+          strsplit(stringi::stri_encode(contents, from = "latin2", to = "UTF-8"),"")[[1]],
+          #rawToChar(contents, multiple = TRUE),
           nrow =
             headers[[h]]$dimensions[[2]],
           ncol =
