@@ -1,10 +1,12 @@
 Package: HARr
 Type: Package
 Title: HAR (GEMPACK) file read/write utility
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: person("Maros", "Ivanic", email = "maros.ivanic@usda.gov", role = c("aut", "cre"))
+Author: Maros Ivanic
+Maintainer: <maros.ivanic@usda.gov>
 Description: This package reads/writes HAR files (and SL4 files) directly using basic R functions
 License: open
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1.9000
+RoxygenNote: 7.2.3

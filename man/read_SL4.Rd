@@ -4,7 +4,7 @@
 \alias{read_SL4}
 \title{Read an SL4 solution file}
 \usage{
-read_SL4(filename)
+read_SL4(filename, toLowerCase = TRUE)
 }
 \arguments{
 \item{filename}{Path to SL4 file}

@@ -4,140 +4,141 @@
 #' @param filename Path to SL4 file
 #' @return A list of variables
 #' @export
-read_SL4 = function(filename) {
-  #filename = "C:\\Users\\MAROS.IVANIC\\OneDrive - USDA\\F2F\\Models\\Modified AEZ\\Solutions\\update.sl4"
-  #filename = "C:\\Users\\MAROS.IVANIC\\OneDrive - USDA\\F2F\\Models\\Modified AEZ\\Solutions\\f2faverage.sl4"
+read_SL4 = function(filename, toLowerCase = TRUE) {
 
   # Read the solution as a HAR file
-  solution = read_har(filename)
+  solution = read_har(filename, toLowerCase = toLowerCase)
 
-  # Logical vector to identify those variables that have some exogenous components
+  #browser()
+
+  if(toLowerCase){
+    names(solution) = toupper(names(solution))
+  }
+
+  subtotals = c('TOTAL', solution$STDS)
+
+  # Create empty arrays for eac variable
+
+  results =
+
+    Map(function(f) {
+
+      if(solution$VCNI[f]>0){
+        dimensions = solution$VCSN[solution$VCSP[f]:(solution$VCSP[f]+solution$VCNI[f]-1)]
+        sizes = c(solution$SSZ[dimensions],length(subtotals))
+        labels = c(Map(function(g)if(solution$SSZ[g]==0) c() else solution$STEL[solution$ELAD[g]:(solution$ELAD[g]+solution$SSZ[g]-1)], dimensions),list(subtotals))
+        names(labels) = c(solution$STNM[ dimensions],'subtotal')
+
+      } else {
+        sizes = c(length(subtotals))
+        labels = list(subtotals)
+        names(labels) = c('subtotal')
+
+      }
+      array(NA, dim = sizes, dimnames = labels)
+
+
+    }
+    # Loop over all variables
+    , 1:length(solution$VCNM)
+
+    )
+
+
+
+  names(results) = solution$VCNM
+
   partials = solution$OREX > 0 & solution$OREX != solution$VNCP
 
-  # Initialize an empty list for the results
-  results = list()
 
-  # Loop through every variable found in the solution
-  for (v in 1:length(solution$VCNM)) {
-
-    # If the variable has zero dimensions create empty dimensions
-    if (solution$VCNI[v] == 0) {
-      dimensions = list()
-    } else{
-      # Otherwise read the set names
-      dimensions =  Map(function(f) {
-        solution$STEL[solution$ELAD[f]:(solution$ELAD[f] + solution$SSZ[f] - 1)]
-      }, solution$VCSN[solution$VCSP[v]:(solution$VCSP[v] + solution$VCNI[v] -
-                                           1)])
-      # Read and assign set names
-      names(dimensions) = Map(function(f) {
-        solution$STNM[f]
-      }, solution$VCSN[solution$VCSP[v]:(solution$VCSP[v] + solution$VCNI[v] -
-                                           1)])
-    }
-
-    # Create a separate dimension for the total solution and possible subtotals
-    dimensions[['subtotals']] = c('TOTAL', solution$STDS)
-
-    # Find the position of the variable in the solution list (some variables may not have values)
-    vv = which(solution$VARS == solution$VCNM[v])
-
-    # Check if the variable has values to process it
-    if (length(vv) > 0) {
-
-      # Check if the variable has any endogenous components
-      if (solution$ORND[vv] == 0) {
-        # The variable has no endogenous components, specify zeros
-        data = rep(0,solution$VNCP[vv])
-      } else {
-        # The variable has some endogenous components; read those
-        data = solution$CUMS[solution$PCUM[vv]:(solution$PCUM[vv] + solution$ORND[vv] -
-                                                  1)]
-
-        if (length(solution$STDS) > 0) {
-          data = c(data,
-                   unlist(Map(
-                     function(f) {
-                       solution[[paste0(paste(rep('0', 3 - nchar(f)), collapse = ''), f, 'S')]][solution$PCUM[vv]:(solution$PCUM[vv] +
-                                                                                                                     solution$ORND[vv] - 1)]
-                     } , 1:length(solution$STDS)
-                   )))
-        }
-
-      }
-
-      # If this is a partially exogenous variable, recast it
-      if (partials[vv]) {
-        excludedElements = solution$OREL[(sum(solution$OREX[1:vv][partials[1:vv]]) -
-                                            solution$OREX[vv][partials[vv]] + 1):sum(solution$OREX[1:vv][partials[1:vv]])]
-
-        newData = rep(0, solution$VNCP[vv] * (length(solution$STDS) + 1))
-
-        allExcludedElements = excludedElements
-        if (length(solution$STDS) > 0) {
-          allExcludedElements = c(allExcludedElements, unlist(Map(
-            function(f) {
-              f * solution$VNCP[vv] + excludedElements
-            }, 1:length(solution$STDS)
-          )))
-
-        }
-
-        newData[-allExcludedElements] = data
-        data = newData
-      }
-
-      # If this variable has any shocked components, speficy those
-      if(solution$SHCK[vv]>0){
-        #shocks = solution$SHOC
-
-        partialShocks = solution$SHCK<solution$VNCP &solution$SHCK>0
-
-        # See if the entire variable is shocked
-        if(solution$SHCK[vv]==solution$VNCP[vv] ){
-          components = 1:solution$VNCP[vv]
-        } else {
-          components = solution$SHCL[(sum(solution$SHCK[1:vv][partialShocks[1:vv]])-solution$SHCK[vv]+1) : sum(solution$SHCK[1:vv][partialShocks[1:vv]])]
-
-        }
-        values = solution$SHOC[(sum(solution$SHCK[1:vv])-solution$SHCK[vv]+1) : sum(solution$SHCK[1:vv])]
-
-        tempShock = rep(0,solution$VNCP[vv])
-        tempShock[components]=values
-
-        if(length(solution$STDS)>0){
-          temp = Map( function(f){
-            stC = paste0(paste(rep('0', 3 - nchar(f)), collapse = ''), f, 'C')
-            stL = paste0(paste(rep('0', 3 - nchar(f)), collapse = ''), f, 'L')
-
-            #solution[[stC]][vv]
-            #f * solution$VNCP[vv] +
-            comps = NULL
-            if((sum(solution[[stC]][1:vv])-solution[[stC]][vv]+1)<= sum(solution[[stC]][1:vv])){
-              comps = solution[[stL]][ (sum(solution[[stC]][1:vv])-solution[[stC]][vv]+1): sum(solution[[stC]][1:vv])]
-            }
-
-            vals = tempShock[comps]
-
-            return(list(f * solution$VNCP[vv]+comps, vals))
-          }, 1:length(solution$STDS))
-
-          components = c(components,unlist(Map(function(f)f[[1]], temp)))
-          values = c(values, unlist(Map(function(f)f[[2]], temp)))
-        }
-
-        data[components]=values
-
-      }
+  stHeaders = c('CUMS',unlist(Map(function(f)sprintf('%sS',formatC(f,width=3, zero.print = TRUE, flag = "0")), 1:length(solution$STDS))))
 
 
-    } else {
-      data = NA
-    }
+  # Assign values to the endogenous variables with no partials
 
-
-    results[[solution$VCNM[v]]] = array(data, dim = unlist(Map(function(f)
-      length(f), dimensions)), dimnames = dimensions)
+  for (v in which(partials == FALSE & solution$PCUM>0)) {
+    range = solution$PCUM[v]:(solution$PCUM[v]+solution$ORND[v]-1)
+    results[[solution$VARS[v]]][] =  unlist(Map(function(f) solution[[f]][range] , stHeaders))
   }
+
+  # Assign zeros to the exogenous variables with no partials
+
+  for (v in which(partials == FALSE & solution$PCUM==0)) {
+    results[[solution$VARS[v]]][] =  0
+
+  }
+
+  start = 1
+  for (v in which(partials == TRUE & solution$PCUM>0)) {
+    range = solution$PCUM[v]:(solution$PCUM[v]+solution$ORND[v]-1)
+
+    positions = solution$ORNL[start - 1 + (1 : solution$ORND[v]) ]
+
+    start = solution$ORND[v]+start
+
+    toFill = rep(FALSE, solution$VNCP[v])
+
+    toFill[positions] = TRUE
+
+    results[[solution$VARS[v]]][toFill] =  unlist(Map(function(f) solution[[f]][range] , stHeaders))
+  }
+
+  # Assign exogenous to partials
+
+  start = 1
+  for (v in which(partials == TRUE & solution$PCUM>0)) {
+    positions = solution$OREL[start - 1 + (1 : solution$OREX[v]) ]
+
+    start = solution$OREX[v]+start
+
+    toFill = rep(FALSE, solution$VNCP[v])
+
+    toFill[positions] = TRUE
+
+    results[[solution$VARS[v]]][toFill] =  0
+  }
+
+  for(st in 0:(length(subtotals)-1)){
+
+    if(st ==0){
+      SHCK = 'SHCK'
+      SHCL = 'SHCL'
+    } else {
+      SHCK = sprintf('%sC',formatC(st,width=3, zero.print = TRUE, flag = "0"))
+      SHCL = sprintf('%sL',formatC(st,width=3, zero.print = TRUE, flag = "0"))
+    }
+
+
+    # Fill in the shocks for TOTAL fully shocked variables
+    for(v in which(solution[[SHCK]]>0 & solution[[SHCK]] ==solution$VNCP)){
+
+      positions = 1:solution$VNCP[v]
+
+      toFill = rep(FALSE, length(results[[solution$VARS[v]]]))
+
+      toFill[positions + st * solution$VNCP[v]]=TRUE
+
+      results[[solution$VARS[v]]][toFill] = solution$SHOC[solution$PSHK[v]:(solution$PSHK[v]-1+solution$VNCP[v])]
+    }
+
+
+    # Fill in the shocks for TOTAL partially shocked variables
+    start = 1
+    for(v in which(solution[[SHCK]]>0 & solution[[SHCK]] < solution$VNCP)){
+
+      positions = solution[[SHCL]][start:(start+solution[[SHCK]][v]-1)]
+
+      toFill = rep(FALSE, length(results[[solution$VARS[v]]]))
+
+      toFill[positions + st * solution$VNCP[v]]=TRUE
+
+      start = solution$SHCK[v]+start
+
+      results[[solution$VARS[v]]][toFill] = solution$SHOC[solution$PSHK[v]:(solution$PSHK[v]-1+solution[[SHCK]][v])]
+    }
+
+
+  }
+
   return(results)
 }

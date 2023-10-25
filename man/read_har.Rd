@@ -4,12 +4,12 @@
 \alias{read_har}
 \title{Read a GEMPACK HAR file into R}
 \usage{
-read_har(filename, useCoefficientsAsNames = F)
+read_har(con, useCoefficientsAsNames = FALSE, toLowerCase = TRUE)
 }
 \arguments{
-\item{filename}{Path to HAR file}
-
 \item{useCoefficientsAsNames}{If a coefficient name is present in the header, use that instead of the four-letter header}
+
+\item{filename}{Path to HAR file}
 }
 \value{
 A list of headers

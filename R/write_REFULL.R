@@ -29,7 +29,7 @@ write_REFULL = function(headerName,
 
   r = list()
 
-  r[[1]] = writeBin(paste0(headerName, rep(' ', 4 - nchar(headerName))), raw())[1:4]
+  r[[1]] = writeBin(paste0(headerName, paste(rep(' ',4-nchar(headerName)),collapse='')), raw())[1:4]
 
 
   r[[2]] =
@@ -70,8 +70,9 @@ write_REFULL = function(headerName,
     ))),
     as.raw(c(rep(
       0x00, 4 + 4 * length(dimnames(arr))
-    ))),
-    as.raw(c(rep(0x00, 7))))
+    )))
+    #, as.raw(c(rep(0x00, 7)))
+    )
 
   }
 
