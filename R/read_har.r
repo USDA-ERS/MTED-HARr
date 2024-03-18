@@ -3,6 +3,8 @@
 #' @description Reads in a GEMPACK HAR file and returns its  representation a list. Currently can only process integer headers, real full headers and character headers
 #' @param filename Path to HAR file
 #' @param useCoefficientsAsNames If a coefficient name is present in the header, use that instead of the four-letter header
+#' @param toLowerCase = TRUE Turn all strings to lower case
+#' @param headersToRead = NULL A vector of header names to read in
 #' @return A list of headers
 #' @export
 read_har <-

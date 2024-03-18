@@ -4,10 +4,19 @@
 \alias{read_har}
 \title{Read a GEMPACK HAR file into R}
 \usage{
-read_har(con, useCoefficientsAsNames = FALSE, toLowerCase = TRUE)
+read_har(
+  con,
+  useCoefficientsAsNames = FALSE,
+  toLowerCase = TRUE,
+  headersToRead = NULL
+)
 }
 \arguments{
 \item{useCoefficientsAsNames}{If a coefficient name is present in the header, use that instead of the four-letter header}
+
+\item{toLowerCase}{= TRUE Turn all strings to lower case}
+
+\item{headersToRead}{= NULL A vector of header names to read in}
 
 \item{filename}{Path to HAR file}
 }
