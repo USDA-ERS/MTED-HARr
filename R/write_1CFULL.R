@@ -5,9 +5,8 @@ write_1CFULL = function(headerName, arr, description = NULL) {
   }
 
   # Number of dimensions of the object
-  dimensions =  c(length(arr),max(nchar(arr)))
+  dimensions =  c(length(arr),max(12,nchar(arr)))
   numberOfDimensions = length(dimensions)
-
 
   r = list()
 
@@ -31,6 +30,17 @@ write_1CFULL = function(headerName, arr, description = NULL) {
       writeBin(as.integer(dimensions), raw(), size = 4)
     )
 
+  if((dimensions[2] * length(arr))>0)
+    lastPiece = writeBin(paste0(
+    substr(arr, 1, dimensions[2]), Map(
+      function(f)
+        paste0(rep(' ', f), collapse = ''),
+      dimensions[2] - nchar(substr(arr, 1, dimensions[2]))
+    )
+    ,collapse=''), raw())[1:(dimensions[2] * length(arr))]
+  else
+    lastPiece = writeBin(numeric(),raw())
+
   r[[3]] =
     c(
       #Empty four characters
@@ -39,13 +49,7 @@ write_1CFULL = function(headerName, arr, description = NULL) {
       writeBin(1L, raw()),
       writeBin(as.integer(length(arr)), raw()),
       writeBin(as.integer(length(arr)), raw()),
-      writeBin(paste0(
-        substr(arr, 1, dimensions[2]), Map(
-          function(f)
-            paste0(rep(' ', f), collapse = ''),
-          dimensions[2] - nchar(substr(arr, 1, dimensions[2]))
-        )
-      ,collapse=''), raw())[1:(dimensions[2] * length(arr))]
+      lastPiece
     )
 
   return(r)

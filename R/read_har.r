@@ -8,7 +8,7 @@
 read_har <-
   function(con,
            useCoefficientsAsNames = FALSE,
-           toLowerCase = TRUE) {
+           toLowerCase = TRUE, headersToRead = NULL) {
 
     # Open the file
     if(is.character(con)){
@@ -162,6 +162,13 @@ read_har <-
         }
       }
     }
+
+    # If there is a positive list, exclude other headers
+    if(!is.null(headersToRead) & !is.na(headersToRead)){
+      headers = headers[toupper(headersToRead)]
+    }
+
+
     # Process first and second records
     #message('Processing first and second records within headers')
     for (h in names(headers)) {
