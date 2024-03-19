@@ -166,7 +166,7 @@ read_har <-
     }
 
     # If there is a positive list, exclude other headers
-    if(!is.null(headersToRead) & !is.na(headersToRead)){
+    if(length(headersToRead)>0){
       headers = headers[headersToRead]
     }
 
